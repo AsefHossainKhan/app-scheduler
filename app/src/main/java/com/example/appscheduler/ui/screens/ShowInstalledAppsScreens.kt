@@ -1,4 +1,4 @@
-package com.example.appscheduler.ui
+package com.example.appscheduler.ui.screens
 
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
