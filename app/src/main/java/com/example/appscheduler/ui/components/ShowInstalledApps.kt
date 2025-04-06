@@ -1,7 +1,8 @@
-package com.example.appscheduler.ui.screens
+package com.example.appscheduler.ui.components
 
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -22,17 +23,22 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.core.graphics.createBitmap
 import androidx.core.graphics.drawable.toBitmap
-
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 @Composable
 fun ShowInstalledAppsScreen(
@@ -41,13 +47,22 @@ fun ShowInstalledAppsScreen(
     onDismiss: () -> Unit
 ) {
     val packageManager = LocalContext.current.packageManager
-    val installedApps = remember { mutableStateOf(listOf<ApplicationInfo>()) }
+    var installedApps by remember { mutableStateOf(emptyList<ApplicationInfo>()) }
+    var appIcons by remember { mutableStateOf(mapOf<String, ImageBitmap>()) }
 
     LaunchedEffect(key1 = Unit) {
-        installedApps.value = packageManager.getInstalledApplications(PackageManager.GET_META_DATA)
+        val apps = packageManager.getInstalledApplications(PackageManager.GET_META_DATA)
             .filter { appInfo ->
                 (appInfo.flags and (ApplicationInfo.FLAG_SYSTEM or ApplicationInfo.FLAG_UPDATED_SYSTEM_APP)) == 0
             }
+        installedApps = apps
+        val icons = withContext(Dispatchers.IO) {
+            apps.associate { appInfo ->
+                val iconBitmap = loadIconBitmap(packageManager, appInfo)
+                appInfo.packageName to iconBitmap.asImageBitmap()
+            }
+        }
+        appIcons = icons
     }
 
     AlertDialog(
@@ -59,10 +74,14 @@ fun ShowInstalledAppsScreen(
         },
         text = {
             Box(modifier = Modifier) {
-                if (installedApps.value.isNotEmpty()) {
+                if (installedApps.isNotEmpty()) {
                     LazyColumn {
-                        items(installedApps.value) { appInfo ->
-                            InstalledAppItem(appInfo, onAppSelected)
+                        items(installedApps) { appInfo ->
+                            InstalledAppItem(
+                                appInfo = appInfo,
+                                appIcon = appIcons[appInfo.packageName],
+                                onAppSelected = onAppSelected
+                            )
                         }
                     }
                 } else {
@@ -74,26 +93,39 @@ fun ShowInstalledAppsScreen(
 }
 
 @Composable
-fun InstalledAppItem(appInfo: ApplicationInfo, onAppSelected: (String) -> Unit) {
+fun InstalledAppItem(
+    appInfo: ApplicationInfo,
+    appIcon: ImageBitmap?,
+    onAppSelected: (String) -> Unit
+) {
     val packageManager = LocalContext.current.packageManager
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { onAppSelected(appInfo.name) } // Call onAppSelected when clicked
+            .clickable { onAppSelected(appInfo.packageName) }
             .padding(8.dp)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Image(
-                bitmap = appInfo.loadIcon(packageManager).current.toBitmap().asImageBitmap(),
-                contentDescription = "App Icon",
-                modifier = Modifier
-                    .size(48.dp)
-                    .clip(CircleShape)
-            )
+            if (appIcon != null) {
+                Image(
+                    bitmap = appIcon,
+                    contentDescription = "App Icon",
+                    modifier = Modifier
+                        .size(48.dp)
+                        .clip(CircleShape)
+                )
+            }
             Spacer(modifier = Modifier.width(8.dp))
             Column {
-                Text(text = appInfo.name, style = MaterialTheme.typography.bodySmall)
-                Text(text = appInfo.packageName, style = MaterialTheme.typography.titleMedium)
+                Text(
+                    text = packageManager.getApplicationLabel(appInfo).toString(),
+                    style = MaterialTheme.typography.bodySmall
+                )
+                Text(
+                    text = appInfo.packageName,
+                    style = MaterialTheme.typography.titleMedium
+                )
             }
         }
         HorizontalDivider(
@@ -101,5 +133,13 @@ fun InstalledAppItem(appInfo: ApplicationInfo, onAppSelected: (String) -> Unit) 
             thickness = 1.dp,
             color = Color.LightGray
         )
+    }
+}
+
+private fun loadIconBitmap(packageManager: PackageManager, appInfo: ApplicationInfo): Bitmap {
+    return try {
+        appInfo.loadIcon(packageManager).toBitmap()
+    } catch (_: Exception) {
+        createBitmap(1, 1)
     }
 }

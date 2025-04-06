@@ -36,6 +36,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.appscheduler.data.models.Schedule
 import com.example.appscheduler.ui.SharedViewModel
+import com.example.appscheduler.ui.components.ShowInstalledAppsScreen
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
