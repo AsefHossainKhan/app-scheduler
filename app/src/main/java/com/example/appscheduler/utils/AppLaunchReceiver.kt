@@ -7,8 +7,8 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.os.Build
-import android.service.autofill.Validators.or
 import android.util.Log
+import com.example.appscheduler.data.models.Schedule
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -35,7 +35,8 @@ class AppLaunchReceiver : BroadcastReceiver() {
         if (launchIntent != null) {
             Log.d("AMI", "launchApp: trying to LAUNCH inside if")
             launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            launchIntent.component = ComponentName(packageName, getMainActivityClassName(context, packageName))
+            launchIntent.component =
+                ComponentName(packageName, getMainActivityClassName(context, packageName))
             context.startActivity(launchIntent)
         } else {
             Log.d("AMI", "launchApp: I failed")
@@ -58,15 +59,23 @@ class AppLaunchReceiver : BroadcastReceiver() {
 class AlarmScheduler @Inject constructor(@ApplicationContext private val context: Context) {
     private val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
 
-    fun scheduleAppLaunch(packageName: String, dateTime: LocalDateTime) {
+    fun scheduleAppLaunch(schedule: Schedule) {
         val intent = Intent(context, AppLaunchReceiver::class.java).apply {
-            action = "com.example.appscheduler.APP_LAUNCH"
-            putExtra("package_name", packageName)
+            action = Constants.BroadcastReceiver.ACTION_APP_LAUNCH
+            putExtra(Constants.BroadcastReceiver.EXTRA_PACKAGE_NAME, schedule.packageName)
+            putExtra(
+                Constants.BroadcastReceiver.EXTRA_SCHEDULED_TIME,
+                schedule.scheduledTime.toString()
+            )
+            putExtra(Constants.BroadcastReceiver.EXTRA_SCHEDULE_ID, schedule.id)
         }
 
-        val timeInMillis = dateTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+        val timeInMillis = schedule.scheduledTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
         val pendingIntent = PendingIntent.getBroadcast(
-            context, timeInMillis.toInt(), intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            context,
+            schedule.hashCode(),
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
 
@@ -83,14 +92,21 @@ class AlarmScheduler @Inject constructor(@ApplicationContext private val context
         }
     }
 
-    fun cancelAppLaunch(packageName: String, dateTime: LocalDateTime) {
+    fun cancelAppLaunch(schedule: Schedule) {
         val intent = Intent(context, AppLaunchReceiver::class.java).apply {
-            action = "com.example.appscheduler.APP_LAUNCH"
-            putExtra("package_name", packageName)
+            action = Constants.BroadcastReceiver.ACTION_APP_LAUNCH
+            putExtra(Constants.BroadcastReceiver.EXTRA_PACKAGE_NAME, schedule.packageName)
+            putExtra(
+                Constants.BroadcastReceiver.EXTRA_SCHEDULED_TIME,
+                schedule.scheduledTime.toString()
+            )
+            putExtra(Constants.BroadcastReceiver.EXTRA_SCHEDULE_ID, schedule.id)
         }
-        val timeInMillis = dateTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
         val pendingIntent = PendingIntent.getBroadcast(
-            context, timeInMillis.toInt(), intent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+            context,
+            schedule.hashCode(),
+            intent,
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
         alarmManager.cancel(pendingIntent)
     }

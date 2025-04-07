@@ -46,30 +46,26 @@ import java.time.format.DateTimeFormatter
 
 @Composable
 fun HomeScreen(
-    navController: NavController,
-    sharedViewModel: SharedViewModel
+    navController: NavController, sharedViewModel: SharedViewModel
 ) {
     val viewModel: AlarmViewModel = hiltViewModel()
     val alarmTimes by viewModel.scheduleList.collectAsState()
 
-    Scaffold(
-        content = { innerPadding ->
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding)
-            ) {
-                ScheduleContent(viewModel)
-                ScheduleList(alarmTimes = alarmTimes)
+    Scaffold(content = { innerPadding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+        ) {
+            ScheduleContent(viewModel)
+            ScheduleList(alarmTimes = alarmTimes)
 
-            }
-        },
-        floatingActionButton = {
-            FloatingActionButton(onClick = { viewModel.showDialog() }) {
-                Icon(imageVector = Icons.Default.Add, contentDescription = "Add App Scheduler")
-            }
         }
-    )
+    }, floatingActionButton = {
+        FloatingActionButton(onClick = { viewModel.showDialog() }) {
+            Icon(imageVector = Icons.Default.Add, contentDescription = "Add App Scheduler")
+        }
+    })
 }
 
 @Composable
@@ -87,8 +83,7 @@ fun ScheduleListItem(alarmTime: Schedule) {
     val formattedDateTime = alarmTime.scheduledTime.format(formatter)
     Row {
         Text(
-            text = formattedDateTime,
-            modifier = Modifier.padding(8.dp)
+            text = formattedDateTime, modifier = Modifier.padding(8.dp)
         )
         Text(text = alarmTime.packageName, modifier = Modifier.padding(8.dp))
     }
@@ -97,7 +92,6 @@ fun ScheduleListItem(alarmTime: Schedule) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ScheduleContent(viewModel: AlarmViewModel) {
-    val alarmTime by viewModel.scheduleItem.collectAsState(initial = null)
     val showDialog by viewModel.showDialog.collectAsState(initial = false)
     var datePicked by remember { mutableStateOf(LocalDate.now()) }
     var timePicked by remember { mutableStateOf(LocalTime.now()) }
@@ -122,8 +116,7 @@ fun ScheduleContent(viewModel: AlarmViewModel) {
                                 if (datePickerState.selectedDateMillis != null) {
                                     datePicked =
                                         Instant.ofEpochMilli(datePickerState.selectedDateMillis!!)
-                                            .atZone(ZoneId.systemDefault())
-                                            .toLocalDate()
+                                            .atZone(ZoneId.systemDefault()).toLocalDate()
                                 }
                             }) {
                                 Text(text = "OK")
@@ -133,44 +126,34 @@ fun ScheduleContent(viewModel: AlarmViewModel) {
                             TextButton(onClick = { showDatePicker = false }) {
                                 Text(text = "Cancel")
                             }
-                        }
-                    ) {
+                        }) {
                         DatePicker(state = datePickerState)
                     }
                 }
                 if (showTimePicker) {
-                    AlertDialog(
-                        onDismissRequest = { showTimePicker = false },
-                        confirmButton = {
-                            TextButton(onClick = {
-                                showTimePicker = false
-                                timePicked =
-                                    LocalTime.of(timePickerState.hour, timePickerState.minute)
-                            }) {
-                                Text(text = "OK")
-                            }
-                        },
-                        dismissButton = {
-                            TextButton(onClick = { showTimePicker = false }) {
-                                Text(text = "Cancel")
-                            }
-                        },
-                        text = {
-                            TimePicker(state = timePickerState)
+                    AlertDialog(onDismissRequest = { showTimePicker = false }, confirmButton = {
+                        TextButton(onClick = {
+                            showTimePicker = false
+                            timePicked = LocalTime.of(timePickerState.hour, timePickerState.minute)
+                        }) {
+                            Text(text = "OK")
                         }
-                    )
+                    }, dismissButton = {
+                        TextButton(onClick = { showTimePicker = false }) {
+                            Text(text = "Cancel")
+                        }
+                    }, text = {
+                        TimePicker(state = timePickerState)
+                    })
                 }
                 // Add app picker
                 if (showAppPicker) {
-                    ShowInstalledAppsScreen(
-                        onAppSelected = { appName ->
-                            selectedAppName = appName
-                            showAppPicker = false
-                        },
-                        onDismiss = {
-                            showAppPicker = false
-                        }
-                    )
+                    ShowInstalledAppsScreen(onAppSelected = { appName ->
+                        selectedAppName = appName
+                        showAppPicker = false
+                    }, onDismiss = {
+                        showAppPicker = false
+                    })
                 }
                 TextButton(onClick = { showDatePicker = true }) {
                     Text(text = "Select Date: ${datePicked}")
@@ -186,9 +169,7 @@ fun ScheduleContent(viewModel: AlarmViewModel) {
                     val selectedDateTime = LocalDateTime.of(datePicked, timePicked)
                     if (selectedDateTime.isBefore(LocalDateTime.now())) {
                         Toast.makeText(
-                            context,
-                            "Please pick a future date and time",
-                            Toast.LENGTH_SHORT
+                            context, "Please pick a future date and time", Toast.LENGTH_SHORT
                         ).show()
                         return@Button
                     }

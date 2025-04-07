@@ -64,12 +64,12 @@ class AlarmViewModel @Inject constructor(
         _scheduleList.value = currentList
         // Save the updated list to SharedPreferences
         saveSchedulesToPreferences(currentList)
-        alarmScheduler.scheduleAppLaunch(schedule.packageName, schedule.scheduledTime)
+        alarmScheduler.scheduleAppLaunch(schedule)
     }
 
     fun deleteSchedule(schedule: Schedule) {
         //...
-        alarmScheduler.cancelAppLaunch(schedule.packageName, schedule.scheduledTime)
+        alarmScheduler.cancelAppLaunch(schedule)
     }
 
     private fun saveSchedulesToPreferences(scheduleList: List<Schedule>) {
