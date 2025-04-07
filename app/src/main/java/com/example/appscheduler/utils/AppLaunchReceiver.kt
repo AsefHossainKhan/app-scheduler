@@ -73,7 +73,7 @@ class AlarmScheduler @Inject constructor(@ApplicationContext private val context
         val timeInMillis = schedule.scheduledTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
         val pendingIntent = PendingIntent.getBroadcast(
             context,
-            schedule.hashCode(),
+            schedule.id.hashCode(),
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
@@ -104,7 +104,7 @@ class AlarmScheduler @Inject constructor(@ApplicationContext private val context
         }
         val pendingIntent = PendingIntent.getBroadcast(
             context,
-            schedule.hashCode(),
+            schedule.id.hashCode(),
             intent,
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )

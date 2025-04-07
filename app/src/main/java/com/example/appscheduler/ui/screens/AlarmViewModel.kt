@@ -2,14 +2,12 @@ package com.example.appscheduler.ui.screens
 
 import android.content.Context
 import android.content.SharedPreferences
-import android.util.Log
 import androidx.core.content.edit
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import com.example.appscheduler.data.models.Schedule
 import com.example.appscheduler.utils.AlarmScheduler
 import com.example.appscheduler.utils.LocalDateTimeAdapter
-import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.google.gson.reflect.TypeToken
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -17,7 +15,6 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 
 @HiltViewModel
@@ -29,18 +26,19 @@ class AlarmViewModel @Inject constructor(
 
     private val _scheduleList = MutableStateFlow<List<Schedule>>(emptyList())
     private val _scheduleItem = MutableStateFlow(Schedule("", LocalDateTime.now()))
-    private val _showDialog = MutableStateFlow(false)
+    private val _showAddDialog = MutableStateFlow(false)
+    private val _showEditDialog = MutableStateFlow(false)
 
     val scheduleList = _scheduleList.asStateFlow()
     val scheduleItem = _scheduleItem.asStateFlow()
-    val showDialog = _showDialog.asStateFlow()
+    val showAddDialog = _showAddDialog.asStateFlow()
+    val showEditDialog = _showEditDialog.asStateFlow()
 
     private val scheduleListKey = "alarm_list"
     private val sharedPreferences: SharedPreferences =
         context.getSharedPreferences(scheduleListKey, Context.MODE_PRIVATE)
     private val gson = GsonBuilder().registerTypeAdapter(
-        LocalDateTime::class.java,
-        LocalDateTimeAdapter()
+        LocalDateTime::class.java, LocalDateTimeAdapter()
     ).create()
 
     init {
@@ -67,6 +65,27 @@ class AlarmViewModel @Inject constructor(
         alarmScheduler.scheduleAppLaunch(schedule)
     }
 
+    fun editSchedule(schedule: Schedule, updatedTime: LocalDateTime, updatedPackageName: String) {
+        // Find the index of the schedule to be edited
+        val currentList = _scheduleList.value.toMutableList()
+        val index = currentList.indexOfFirst { it.id == schedule.id }
+        if (index != -1) {
+            // Create a new Schedule object with the updated values
+            val updatedSchedule =
+                schedule.copy(scheduledTime = updatedTime, packageName = updatedPackageName)
+
+            // Create a new list with the updated schedule
+            val newList = currentList.toMutableList().apply {
+                set(index, updatedSchedule)
+            }
+            _scheduleList.value = newList
+
+            // Save the updated list to SharedPreferences
+            saveSchedulesToPreferences(currentList)
+            alarmScheduler.scheduleAppLaunch(updatedSchedule)
+        }
+    }
+
     fun deleteSchedule(schedule: Schedule) {
         //...
         alarmScheduler.cancelAppLaunch(schedule)
@@ -77,11 +96,20 @@ class AlarmViewModel @Inject constructor(
         sharedPreferences.edit() { putString(scheduleListKey, json) }
     }
 
-    fun showDialog() {
-        _showDialog.value = true
+    fun showAddDialog() {
+        _showAddDialog.value = true
     }
 
-    fun hideDialog() {
-        _showDialog.value = false
+    fun hideAddDialog() {
+        _showAddDialog.value = false
+    }
+
+    fun showEditDialog(schedule: Schedule) {
+        _scheduleItem.value = schedule
+        _showEditDialog.value = true
+    }
+
+    fun hideEditDialog() {
+        _showEditDialog.value = false
     }
 }
