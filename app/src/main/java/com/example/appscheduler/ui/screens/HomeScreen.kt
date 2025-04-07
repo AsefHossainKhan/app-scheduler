@@ -59,7 +59,7 @@ fun HomeScreen(
                     .fillMaxSize()
                     .padding(innerPadding)
             ) {
-                AlarmContent(viewModel)
+                ScheduleContent(viewModel)
                 ScheduleList(alarmTimes = alarmTimes)
 
             }
@@ -96,7 +96,7 @@ fun ScheduleListItem(alarmTime: Schedule) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AlarmContent(viewModel: AlarmViewModel) {
+fun ScheduleContent(viewModel: AlarmViewModel) {
     val alarmTime by viewModel.scheduleItem.collectAsState(initial = null)
     val showDialog by viewModel.showDialog.collectAsState(initial = false)
     var datePicked by remember { mutableStateOf(LocalDate.now()) }
