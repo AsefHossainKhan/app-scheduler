@@ -41,7 +41,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 @Composable
-fun ShowInstalledAppsScreen(
+fun ShowInstalledApps(
     modifier: Modifier = Modifier,
     onAppSelected: (String) -> Unit,
     onDismiss: () -> Unit

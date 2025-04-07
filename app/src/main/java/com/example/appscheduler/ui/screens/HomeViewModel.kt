@@ -3,7 +3,6 @@ package com.example.appscheduler.ui.screens
 import android.content.Context
 import android.content.SharedPreferences
 import androidx.core.content.edit
-import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import com.example.appscheduler.data.models.Schedule
 import com.example.appscheduler.utils.AlarmScheduler
@@ -18,8 +17,7 @@ import java.time.LocalDateTime
 import javax.inject.Inject
 
 @HiltViewModel
-class AlarmViewModel @Inject constructor(
-    private val savedStateHandle: SavedStateHandle,
+class HomeViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
     private val alarmScheduler: AlarmScheduler
 ) : ViewModel() {
@@ -65,6 +63,15 @@ class AlarmViewModel @Inject constructor(
         // Save the updated list to SharedPreferences
         saveSchedulesToPreferences(currentList)
         alarmScheduler.scheduleAppLaunch(schedule)
+    }
+
+    fun checkConflictInSchedule(dateTime: LocalDateTime): Boolean {
+        val currentList = _scheduleList.value
+        return currentList.any { it.scheduledTime == dateTime }
+    }
+
+    fun clearSchedule() {
+        _scheduleItem.value = Schedule("", LocalDateTime.now())
     }
 
     fun editSchedule(schedule: Schedule, updatedTime: LocalDateTime, updatedPackageName: String) {
