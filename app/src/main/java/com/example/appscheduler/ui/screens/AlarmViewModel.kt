@@ -28,11 +28,13 @@ class AlarmViewModel @Inject constructor(
     private val _scheduleItem = MutableStateFlow(Schedule("", LocalDateTime.now()))
     private val _showAddDialog = MutableStateFlow(false)
     private val _showEditDialog = MutableStateFlow(false)
+    private val _showDeleteDialog = MutableStateFlow(false)
 
     val scheduleList = _scheduleList.asStateFlow()
     val scheduleItem = _scheduleItem.asStateFlow()
     val showAddDialog = _showAddDialog.asStateFlow()
     val showEditDialog = _showEditDialog.asStateFlow()
+    val showDeleteDialog = _showDeleteDialog.asStateFlow()
 
     private val scheduleListKey = "alarm_list"
     private val sharedPreferences: SharedPreferences =
@@ -81,14 +83,24 @@ class AlarmViewModel @Inject constructor(
             _scheduleList.value = newList
 
             // Save the updated list to SharedPreferences
-            saveSchedulesToPreferences(currentList)
+            saveSchedulesToPreferences(newList)
             alarmScheduler.scheduleAppLaunch(updatedSchedule)
         }
     }
 
     fun deleteSchedule(schedule: Schedule) {
-        //...
         alarmScheduler.cancelAppLaunch(schedule)
+        val currentList = _scheduleList.value.toMutableList()
+        val index = currentList.indexOfFirst { it.id == schedule.id }
+        if (index != -1) {
+            // Remove the schedule from the list
+            val newList = currentList.toMutableList().apply {
+                removeAt(index)
+            }
+            _scheduleList.value = newList
+            // Save the updated list to SharedPreferences
+            saveSchedulesToPreferences(newList)
+        }
     }
 
     private fun saveSchedulesToPreferences(scheduleList: List<Schedule>) {
@@ -111,5 +123,14 @@ class AlarmViewModel @Inject constructor(
 
     fun hideEditDialog() {
         _showEditDialog.value = false
+    }
+
+    fun showDeleteDialog(schedule: Schedule) {
+        _scheduleItem.value = schedule
+        _showDeleteDialog.value = true
+    }
+
+    fun hideDeleteDialog() {
+        _showDeleteDialog.value = false
     }
 }

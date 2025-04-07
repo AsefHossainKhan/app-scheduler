@@ -2,7 +2,8 @@ package com.example.appscheduler.ui.screens
 
 import android.util.Log
 import android.widget.Toast
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -60,6 +61,7 @@ fun HomeScreen(
         ) {
             AddSchedule(viewModel)
             EditSchedule(viewModel)
+            DeleteSchedule(viewModel)
             ScheduleList(alarmTimes = alarmTimes, viewModel)
 
         }
@@ -79,6 +81,7 @@ fun ScheduleList(alarmTimes: List<Schedule>, viewModel: AlarmViewModel) {
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ScheduleListItem(alarmTime: Schedule, viewModel: AlarmViewModel) {
     val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
@@ -86,13 +89,40 @@ fun ScheduleListItem(alarmTime: Schedule, viewModel: AlarmViewModel) {
     Row(
         modifier = Modifier
             .padding(8.dp)
-            .clickable {
-                viewModel.showEditDialog(alarmTime)
-            }) {
+            .combinedClickable(onClick = { viewModel.showEditDialog(alarmTime) }, onLongClick = {
+                viewModel.showDeleteDialog(alarmTime)
+            })
+    ) {
         Text(
             text = formattedDateTime, modifier = Modifier.padding(8.dp)
         )
         Text(text = alarmTime.packageName, modifier = Modifier.padding(8.dp))
+    }
+}
+
+@Composable
+fun DeleteSchedule(viewModel: AlarmViewModel) {
+    val showDeleteConfirmation by viewModel.showDeleteDialog.collectAsState(initial = false)
+    if (showDeleteConfirmation) {
+        AlertDialog(
+            onDismissRequest = { viewModel.hideDeleteDialog() },
+            title = { Text("Delete Schedule") },
+            text = { Text("Are you sure you want to delete this schedule?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.deleteSchedule(viewModel.scheduleItem.value)
+                    viewModel.hideDeleteDialog()
+                }) {
+                    Text("Delete")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    viewModel.hideDeleteDialog()
+                }) {
+                    Text("Cancel")
+                }
+            })
     }
 }
 
@@ -109,8 +139,10 @@ fun AddSchedule(viewModel: AlarmViewModel) {
         var showDatePicker by remember { mutableStateOf(false) }
         var showTimePicker by remember { mutableStateOf(false) }
         var showAppPicker by remember { mutableStateOf(false) }
-        val datePickerState = rememberDatePickerState()
-        val timePickerState = rememberTimePickerState()
+        val datePickerState = rememberDatePickerState(initialSelectedDateMillis = datePicked.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli())
+        val timePickerState = rememberTimePickerState(
+            initialHour = timePicked.hour, initialMinute = timePicked.minute, is24Hour = false
+        )
 
         Dialog(onDismissRequest = { viewModel.hideAddDialog() }) {
             Column {
@@ -211,11 +243,10 @@ fun EditSchedule(viewModel: AlarmViewModel) {
         var showDatePicker by remember { mutableStateOf(false) }
         var showTimePicker by remember { mutableStateOf(false) }
         var showAppPicker by remember { mutableStateOf(false) }
-        val initialDateMillis =
-            datePicked.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
-        val datePickerState = rememberDatePickerState(initialSelectedDateMillis = initialDateMillis)
+
+        val datePickerState = rememberDatePickerState(initialSelectedDateMillis = datePicked.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli())
         val timePickerState = rememberTimePickerState(
-            initialHour = timePicked.hour, initialMinute = timePicked.minute, is24Hour = true
+            initialHour = timePicked.hour, initialMinute = timePicked.minute, is24Hour = false
         )
 
         Dialog(onDismissRequest = { viewModel.hideEditDialog() }) {
