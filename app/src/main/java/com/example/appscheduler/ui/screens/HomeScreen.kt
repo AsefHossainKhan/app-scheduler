@@ -17,6 +17,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
@@ -32,7 +33,7 @@ fun HomeScreen(
     navController: NavController, sharedViewModel: SharedViewModel
 ) {
     val viewModel: HomeViewModel = hiltViewModel()
-    val alarmTimes by viewModel.scheduleList.collectAsState()
+    val scheduleList by viewModel.scheduleList.collectAsState()
 
     Scaffold(content = { innerPadding ->
         Column(
@@ -43,7 +44,7 @@ fun HomeScreen(
             AddSchedule(viewModel)
             EditSchedule(viewModel)
             DeleteSchedule(viewModel)
-            ScheduleList(alarmTimes = alarmTimes, viewModel)
+            ScheduleList(scheduleList = scheduleList, viewModel)
 
         }
     }, floatingActionButton = {
@@ -54,29 +55,32 @@ fun HomeScreen(
 }
 
 @Composable
-fun ScheduleList(alarmTimes: List<Schedule>, viewModel: HomeViewModel) {
+fun ScheduleList(scheduleList: List<Schedule>, viewModel: HomeViewModel) {
     LazyColumn {
-        items(alarmTimes.size) { alarmTime ->
-            ScheduleListItem(alarmTime = alarmTimes[alarmTime], viewModel)
+        items(scheduleList.size) { scheduleIndex ->
+            ScheduleListItem(schedule = scheduleList[scheduleIndex], viewModel)
         }
     }
 }
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun ScheduleListItem(alarmTime: Schedule, viewModel: HomeViewModel) {
+fun ScheduleListItem(schedule: Schedule, viewModel: HomeViewModel) {
     val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
-    val formattedDateTime = alarmTime.scheduledTime.format(formatter)
+    val formattedDateTime = schedule.scheduledTime.format(formatter)
+    val packageManager = LocalContext.current.packageManager
+    val packageInfo = packageManager.getPackageInfo(schedule.packageName,0)
+    val appName = packageInfo.applicationInfo?.loadLabel(packageManager).toString()
     Row(
         modifier = Modifier
             .padding(8.dp)
-            .combinedClickable(onClick = { viewModel.showEditDialog(alarmTime) }, onLongClick = {
-                viewModel.showDeleteDialog(alarmTime)
+            .combinedClickable(onClick = { viewModel.showEditDialog(schedule) }, onLongClick = {
+                viewModel.showDeleteDialog(schedule)
             })
     ) {
         Text(
             text = formattedDateTime, modifier = Modifier.padding(8.dp)
         )
-        Text(text = alarmTime.packageName, modifier = Modifier.padding(8.dp))
+        Text(text = appName, modifier = Modifier.padding(8.dp))
     }
 }
