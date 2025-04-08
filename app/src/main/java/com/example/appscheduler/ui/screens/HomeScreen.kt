@@ -60,6 +60,7 @@ fun HomeScreen(
         }
     }
     LaunchedEffect(Unit) {
+        viewModel.loadScheduleListFromPreferences()
         createNotificationChannel(context)
         requestExactAlarmPermission(context)
         requestNotificationPermission(context, launcher)

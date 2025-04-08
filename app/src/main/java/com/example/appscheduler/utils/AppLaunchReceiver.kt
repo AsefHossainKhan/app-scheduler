@@ -37,14 +37,16 @@ class AppLaunchReceiver : BroadcastReceiver() {
             val packageName = intent.getStringExtra("package_name")
             val scheduledTimeString =
                 intent.getStringExtra(Constants.BroadcastReceiver.EXTRA_SCHEDULED_TIME)
+            val scheduleId =
+                intent.getStringExtra(Constants.BroadcastReceiver.EXTRA_SCHEDULE_ID)
             if (!packageName.isNullOrEmpty()) {
                 Log.d("AMI", "onReceive: App launch er try marsi for $packageName")
-                launchApp(context, packageName, scheduledTimeString.toString())
+                launchApp(context, packageName, scheduledTimeString.toString(), scheduleId.toString())
             }
         }
     }
 
-    private fun launchApp(context: Context, packageName: String, scheduledTimeString: String) {
+    private fun launchApp(context: Context, packageName: String, scheduledTimeString: String, scheduleId: String) {
         val packageManager = context.packageManager
         val launchIntent = packageManager.getLaunchIntentForPackage(packageName)
         Log.d("AMI", "launchApp: $launchIntent")
@@ -118,6 +120,23 @@ class AppLaunchReceiver : BroadcastReceiver() {
             val updatedJson = gson.toJson(updatedLoggerList)
             Log.d("AMI", "launchApp: Shared preferences e save hoitese?? $updatedJson")
             sharedPreferences.edit() { putString(logKey, updatedJson) }
+
+            // Remove the executed schedule from the list
+            val scheduleListKey = "alarm_list"
+            val scheduleSharedPreferences: SharedPreferences =
+                context.getSharedPreferences(scheduleListKey, Context.MODE_PRIVATE)
+            val scheduleGson = GsonBuilder().registerTypeAdapter(
+                LocalDateTime::class.java, LocalDateTimeAdapter()
+            ).create()
+            var scheduleJson = scheduleSharedPreferences.getString(scheduleListKey, null)
+            if (scheduleJson != null) {
+                val scheduleType = object : TypeToken<List<Schedule>>() {}.type
+                val scheduleList = scheduleGson.fromJson<List<Schedule>>(scheduleJson, scheduleType)
+                Log.d("AMI", "DELETE ER EKHANE $scheduleList ---- $scheduleId ")
+                val updatedScheduleList = scheduleList.filter { it.id.toString() != scheduleId }
+                val updatedScheduleJson = scheduleGson.toJson(updatedScheduleList)
+                scheduleSharedPreferences.edit() { putString(scheduleListKey, updatedScheduleJson) }
+            }
         } else {
             // Add to log in sharedPreferences that the application reminder was unsuccessful
             val logKey = "log_key"
@@ -169,7 +188,7 @@ class AlarmScheduler @Inject constructor(@ApplicationContext private val context
                 Constants.BroadcastReceiver.EXTRA_SCHEDULED_TIME,
                 schedule.scheduledTime.toString()
             )
-            putExtra(Constants.BroadcastReceiver.EXTRA_SCHEDULE_ID, schedule.id)
+            putExtra(Constants.BroadcastReceiver.EXTRA_SCHEDULE_ID, schedule.id.toString())
         }
 
         val timeInMillis =
@@ -222,7 +241,7 @@ class AlarmScheduler @Inject constructor(@ApplicationContext private val context
                 Constants.BroadcastReceiver.EXTRA_SCHEDULED_TIME,
                 schedule.scheduledTime.toString()
             )
-            putExtra(Constants.BroadcastReceiver.EXTRA_SCHEDULE_ID, schedule.id)
+            putExtra(Constants.BroadcastReceiver.EXTRA_SCHEDULE_ID, schedule.id.toString())
         }
         val pendingIntent = PendingIntent.getBroadcast(
             context,

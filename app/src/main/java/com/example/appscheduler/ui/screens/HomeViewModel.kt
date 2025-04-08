@@ -45,7 +45,7 @@ class HomeViewModel @Inject constructor(
         loadScheduleListFromPreferences()
     }
 
-    private fun loadScheduleListFromPreferences() {
+    internal fun loadScheduleListFromPreferences() {
         val json = sharedPreferences.getString(scheduleListKey, null)
         if (json != null) {
             val type = object : TypeToken<List<Schedule>>() {}.type
