@@ -1,5 +1,13 @@
 package com.example.appscheduler.ui.screens
 
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.content.Context
+import android.content.pm.PackageManager
+import android.os.Build
+import android.util.Log
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Column
@@ -14,11 +22,13 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.appscheduler.data.models.Schedule
@@ -34,6 +44,28 @@ fun HomeScreen(
 ) {
     val viewModel: HomeViewModel = hiltViewModel()
     val scheduleList by viewModel.scheduleList.collectAsState()
+    val context = LocalContext.current
+    val launcher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            Log.d("Permission", "Notification permission granted")
+        } else {
+            Log.d("Permission", "Notification permission denied")
+        }
+    }
+    LaunchedEffect(Unit) {
+        createNotificationChannel(context)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(
+                    context,
+                    android.Manifest.permission.POST_NOTIFICATIONS
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                launcher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+            }
+        }
+    }
 
     Scaffold(content = { innerPadding ->
         Column(
@@ -52,6 +84,21 @@ fun HomeScreen(
             Icon(imageVector = Icons.Default.Add, contentDescription = "Add App Scheduler")
         }
     })
+}
+
+fun createNotificationChannel(context: Context) {
+    val channelId = "channel_id"
+    val name = "My Channel"
+    val descriptionText = "Channel for launching other apps"
+    val importance = NotificationManager.IMPORTANCE_HIGH
+
+    val channel = NotificationChannel(channelId, name, importance).apply {
+        description = descriptionText
+    }
+
+    val notificationManager: NotificationManager =
+        context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+    notificationManager.createNotificationChannel(channel)
 }
 
 @Composable
