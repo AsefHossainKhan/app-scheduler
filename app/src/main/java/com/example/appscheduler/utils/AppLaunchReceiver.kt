@@ -145,6 +145,8 @@ class AlarmScheduler @Inject constructor(@ApplicationContext private val context
                 alarmManager.setExactAndAllowWhileIdle(
                     AlarmManager.RTC_WAKEUP, timeInMillis, pendingIntent
                 )
+            } else {
+                Toast.makeText(context, "Permission of Alarms and Reminders not given", Toast.LENGTH_SHORT).show()
             }
         } else {
             alarmManager.setExactAndAllowWhileIdle(

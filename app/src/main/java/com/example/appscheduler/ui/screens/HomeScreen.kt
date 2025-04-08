@@ -1,11 +1,15 @@
 package com.example.appscheduler.ui.screens
 
+import android.app.AlarmManager
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
+import android.provider.Settings
 import android.util.Log
+import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -29,6 +33,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import androidx.core.net.toUri
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.appscheduler.data.models.Schedule
@@ -56,15 +61,8 @@ fun HomeScreen(
     }
     LaunchedEffect(Unit) {
         createNotificationChannel(context)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (ContextCompat.checkSelfPermission(
-                    context,
-                    android.Manifest.permission.POST_NOTIFICATIONS
-                ) != PackageManager.PERMISSION_GRANTED
-            ) {
-                launcher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
-            }
-        }
+        requestExactAlarmPermission(context)
+        requestNotificationPermission(context, launcher)
     }
 
     Scaffold(content = { innerPadding ->
@@ -101,6 +99,33 @@ fun createNotificationChannel(context: Context) {
     notificationManager.createNotificationChannel(channel)
 }
 
+fun requestExactAlarmPermission(context: Context) {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+        if (!alarmManager.canScheduleExactAlarms()) {
+            val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM).apply {
+                data = "package:${context.packageName}".toUri()
+            }
+            context.startActivity(intent)
+        }
+    }
+}
+
+fun requestNotificationPermission(
+    context: Context,
+    launcher: ManagedActivityResultLauncher<String, Boolean>
+) {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        if (ContextCompat.checkSelfPermission(
+                context,
+                android.Manifest.permission.POST_NOTIFICATIONS
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            launcher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+        }
+    }
+}
+
 @Composable
 fun ScheduleList(scheduleList: List<Schedule>, viewModel: HomeViewModel) {
     LazyColumn {
@@ -116,7 +141,7 @@ fun ScheduleListItem(schedule: Schedule, viewModel: HomeViewModel) {
     val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
     val formattedDateTime = schedule.scheduledTime.format(formatter)
     val packageManager = LocalContext.current.packageManager
-    val packageInfo = packageManager.getPackageInfo(schedule.packageName,0)
+    val packageInfo = packageManager.getPackageInfo(schedule.packageName, 0)
     val appName = packageInfo.applicationInfo?.loadLabel(packageManager).toString()
     Row(
         modifier = Modifier
