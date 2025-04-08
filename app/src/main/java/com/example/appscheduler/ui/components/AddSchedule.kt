@@ -35,7 +35,7 @@ fun AddSchedule(viewModel: HomeViewModel) {
     val context = LocalContext.current
 
     if (showDialog) {
-        var selectedAppName by remember { mutableStateOf<String?>(null) } // Store selected app name
+        var selectedAppName by remember { mutableStateOf<String?>(null) }
         var datePicked by remember { mutableStateOf(LocalDate.now()) }
         var timePicked by remember { mutableStateOf(LocalTime.now()) }
         var showDatePicker by remember { mutableStateOf(false) }
@@ -87,7 +87,6 @@ fun AddSchedule(viewModel: HomeViewModel) {
                         TimePicker(state = timePickerState)
                     })
                 }
-                // Add app picker
                 if (showAppPicker) {
                     ShowInstalledApps(onAppSelected = { appName ->
                         selectedAppName = appName
@@ -103,7 +102,7 @@ fun AddSchedule(viewModel: HomeViewModel) {
                     Text(text = "Select Time: ${timePicked.hour}:${timePicked.minute}")
                 }
                 TextButton(onClick = { showAppPicker = true }) {
-                    Text(text = "Select App: ${selectedAppName ?: "None"}") // Display selected app name
+                    Text(text = "Select App: ${selectedAppName ?: "None"}")
                 }
 
                 Button(onClick = {

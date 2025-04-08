@@ -88,7 +88,6 @@ fun EditSchedule(viewModel: HomeViewModel) {
                         TimePicker(state = timePickerState)
                     })
                 }
-                // Add app picker
                 if (showAppPicker) {
                     ShowInstalledApps(onAppSelected = { appName ->
                         selectedAppName = appName

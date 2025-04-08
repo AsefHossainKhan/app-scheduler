@@ -14,7 +14,9 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -23,30 +25,30 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.navigation.NavController
 import com.example.appscheduler.data.models.Schedule
-import com.example.appscheduler.ui.SharedViewModel
 import com.example.appscheduler.ui.components.AddSchedule
 import com.example.appscheduler.ui.components.DeleteSchedule
 import com.example.appscheduler.ui.components.EditSchedule
+import com.example.appscheduler.utils.Constants
 import java.time.format.DateTimeFormatter
 
 @Composable
-fun HomeScreen(
-    navController: NavController, sharedViewModel: SharedViewModel
-) {
+fun HomeScreen() {
     val viewModel: HomeViewModel = hiltViewModel()
     val scheduleList by viewModel.scheduleList.collectAsState()
     val context = LocalContext.current
@@ -86,9 +88,9 @@ fun HomeScreen(
 }
 
 fun createNotificationChannel(context: Context) {
-    val channelId = "channel_id"
-    val name = "My Channel"
-    val descriptionText = "Channel for launching other apps"
+    val channelId = Constants.Notification.CHANNEL_ID
+    val name = Constants.Notification.CHANNEL_NAME
+    val descriptionText = Constants.Notification.CHANNEL_DESCRIPTION
     val importance = NotificationManager.IMPORTANCE_HIGH
 
     val channel = NotificationChannel(channelId, name, importance).apply {
@@ -129,9 +131,25 @@ fun requestNotificationPermission(
 
 @Composable
 fun ScheduleList(scheduleList: List<Schedule>, viewModel: HomeViewModel) {
-    LazyColumn {
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(16.dp)
+    ) {
         items(scheduleList.size) { scheduleIndex ->
             ScheduleListItem(schedule = scheduleList[scheduleIndex], viewModel)
+        }
+        if (scheduleList.isEmpty()) {
+            item {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "No apps scheduled",
+                        style = MaterialTheme.typography.headlineLarge,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
         }
     }
 }

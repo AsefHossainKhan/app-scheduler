@@ -31,27 +31,31 @@ import javax.inject.Inject
 class AppLaunchReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent) {
-        Log.d("AMI", "onReceive: e ashchi")
-        if (intent.action == "com.example.appscheduler.APP_LAUNCH") {
-            Log.d("AMI", "onReceive: If bhitor dhuksi")
-            val packageName = intent.getStringExtra("package_name")
+        if (intent.action == Constants.BroadcastReceiver.ACTION_APP_LAUNCH) {
+            val packageName = intent.getStringExtra(Constants.BroadcastReceiver.EXTRA_PACKAGE_NAME)
             val scheduledTimeString =
                 intent.getStringExtra(Constants.BroadcastReceiver.EXTRA_SCHEDULED_TIME)
-            val scheduleId =
-                intent.getStringExtra(Constants.BroadcastReceiver.EXTRA_SCHEDULE_ID)
+            val scheduleId = intent.getStringExtra(Constants.BroadcastReceiver.EXTRA_SCHEDULE_ID)
             if (!packageName.isNullOrEmpty()) {
-                Log.d("AMI", "onReceive: App launch er try marsi for $packageName")
-                launchApp(context, packageName, scheduledTimeString.toString(), scheduleId.toString())
+                launchApp(
+                    context, packageName, scheduledTimeString.toString(), scheduleId.toString()
+                )
             }
         }
     }
 
-    private fun launchApp(context: Context, packageName: String, scheduledTimeString: String, scheduleId: String) {
+    private fun launchApp(
+        context: Context, packageName: String, scheduledTimeString: String, scheduleId: String
+    ) {
         val packageManager = context.packageManager
         val launchIntent = packageManager.getLaunchIntentForPackage(packageName)
-        Log.d("AMI", "launchApp: $launchIntent")
+        val sharedPreferences: SharedPreferences = context.getSharedPreferences(
+            Constants.SharedPreferences.APP_SCHEDULER_SHARED_PREF, Context.MODE_PRIVATE
+        )
+        val gson = GsonBuilder().registerTypeAdapter(
+            LocalDateTime::class.java, LocalDateTimeAdapter()
+        ).create()
         if (launchIntent != null) {
-            Log.d("AMI", "launchApp: trying to LAUNCH inside if")
             launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             launchIntent.component =
                 ComponentName(packageName, getMainActivityClassName(context, packageName))
@@ -63,115 +67,93 @@ class AppLaunchReceiver : BroadcastReceiver() {
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
             val builder: NotificationCompat.Builder =
-                NotificationCompat.Builder(context, "channel_id")
+                NotificationCompat.Builder(context, Constants.Notification.CHANNEL_ID)
                     .setSmallIcon(R.drawable.btn_star)
-                    .setContentTitle("Open Other App")
-                    .setContentText("Tap to open the other app")
-                    .setPriority(NotificationCompat.PRIORITY_HIGH)
-                    .setContentIntent(pendingIntent)
+                    .setContentTitle("Open Scheduled Application").setContentText("Tap to open the scheduled application")
+                    .setPriority(NotificationCompat.PRIORITY_HIGH).setContentIntent(pendingIntent)
                     .setAutoCancel(true)
 
             val notificationManager = NotificationManagerCompat.from(context)
             if (ActivityCompat.checkSelfPermission(
-                    context,
-                    Manifest.permission.POST_NOTIFICATIONS
+                    context, Manifest.permission.POST_NOTIFICATIONS
                 ) != PackageManager.PERMISSION_GRANTED
             ) {
                 Toast.makeText(
-                    context,
-                    "Permission for notification not allowed",
-                    Toast.LENGTH_SHORT
+                    context, "Permission for notification not allowed", Toast.LENGTH_SHORT
                 ).show()
                 return
             }
             notificationManager.notify(1001, builder.build())
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-                Log.d("AMI", "launchApp: Activity Option Wala")
                 val options = ActivityOptions.makeBasic()
                     .setPendingIntentBackgroundActivityStartMode(ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED)
                     .toBundle()
                 context.startActivity(launchIntent, options)
             } else {
-                Log.d("AMI", "launchApp: Activity Option Chara")
                 context.startActivity(launchIntent)
             }
 
             // Add to log in sharedPreferences that the application reminder was successfully executed
-            val logKey = "log_key"
-            val sharedPreferences: SharedPreferences =
-                context.getSharedPreferences(logKey, Context.MODE_PRIVATE)
-            val gson = GsonBuilder().registerTypeAdapter(
-                LocalDateTime::class.java, LocalDateTimeAdapter()
-            ).create()
-            var json = sharedPreferences.getString(logKey, null)
+            var json = sharedPreferences.getString(Constants.SharedPreferences.LOGGER_KEY, null)
             if (json == null) {
                 json = emptyList<Logger>().toString()
             }
             val type = object : TypeToken<List<Logger>>() {}.type
             val loggerList = gson.fromJson<List<Logger>>(json, type)
             val newLogger = Logger(
-                packageName,
-                scheduledTimeString,
-                LocalDateTime.now(),
-                true
+                packageName, scheduledTimeString, LocalDateTime.now(), true
             )
             val updatedLoggerList = loggerList.toMutableList()
             updatedLoggerList.add(newLogger)
             val updatedJson = gson.toJson(updatedLoggerList)
-            Log.d("AMI", "launchApp: Shared preferences e save hoitese?? $updatedJson")
-            sharedPreferences.edit() { putString(logKey, updatedJson) }
+            sharedPreferences.edit {
+                putString(
+                    Constants.SharedPreferences.LOGGER_KEY, updatedJson
+                )
+            }
 
             // Remove the executed schedule from the list
-            val scheduleListKey = "alarm_list"
-            val scheduleSharedPreferences: SharedPreferences =
-                context.getSharedPreferences(scheduleListKey, Context.MODE_PRIVATE)
-            val scheduleGson = GsonBuilder().registerTypeAdapter(
-                LocalDateTime::class.java, LocalDateTimeAdapter()
-            ).create()
-            var scheduleJson = scheduleSharedPreferences.getString(scheduleListKey, null)
+            var scheduleJson = sharedPreferences.getString(
+                Constants.SharedPreferences.SCHEDULE_LIST_KEY, null
+            )
             if (scheduleJson != null) {
                 val scheduleType = object : TypeToken<List<Schedule>>() {}.type
-                val scheduleList = scheduleGson.fromJson<List<Schedule>>(scheduleJson, scheduleType)
-                Log.d("AMI", "DELETE ER EKHANE $scheduleList ---- $scheduleId ")
+                val scheduleList = gson.fromJson<List<Schedule>>(scheduleJson, scheduleType)
                 val updatedScheduleList = scheduleList.filter { it.id.toString() != scheduleId }
-                val updatedScheduleJson = scheduleGson.toJson(updatedScheduleList)
-                scheduleSharedPreferences.edit() { putString(scheduleListKey, updatedScheduleJson) }
+                val updatedScheduleJson = gson.toJson(updatedScheduleList)
+                sharedPreferences.edit {
+                    putString(
+                        Constants.SharedPreferences.SCHEDULE_LIST_KEY, updatedScheduleJson
+                    )
+                }
             }
         } else {
             // Add to log in sharedPreferences that the application reminder was unsuccessful
-            val logKey = "log_key"
-            val sharedPreferences: SharedPreferences =
-                context.getSharedPreferences(logKey, Context.MODE_PRIVATE)
-            val gson = GsonBuilder().registerTypeAdapter(
-                LocalDateTime::class.java, LocalDateTimeAdapter()
-            ).create()
-            val json = sharedPreferences.getString(logKey, null)
+            val json = sharedPreferences.getString(Constants.SharedPreferences.LOGGER_KEY, null)
             if (json != null) {
                 val type = object : TypeToken<List<Logger>>() {}.type
                 val loggerList = gson.fromJson<List<Logger>>(json, type)
                 val newLogger = Logger(
-                    packageName,
-                    scheduledTimeString,
-                    LocalDateTime.now(),
-                    false
+                    packageName, scheduledTimeString, LocalDateTime.now(), false
                 )
                 val updatedLoggerList = loggerList.toMutableList()
                 updatedLoggerList.add(newLogger)
                 val updatedJson = gson.toJson(updatedLoggerList)
-                sharedPreferences.edit() { putString(logKey, updatedJson) }
+                sharedPreferences.edit {
+                    putString(
+                        Constants.SharedPreferences.LOGGER_KEY, updatedJson
+                    )
+                }
             }
-            Log.d("AMI", "launchApp: I failed")
             Log.e("AppLaunchReceiver", "Failed to launch app: $packageName")
         }
     }
 
     private fun getMainActivityClassName(context: Context, packageName: String): String {
         val packageManager = context.packageManager
-        val intent = packageManager.getLaunchIntentForPackage(packageName)
-            ?: return "" // Handle case where no launch intent is found
+        val intent = packageManager.getLaunchIntentForPackage(packageName) ?: return ""
 
-        val component = intent.component
-            ?: return "" // Handle case where component is null
+        val component = intent.component ?: return ""
 
         return component.className
     }
@@ -185,8 +167,7 @@ class AlarmScheduler @Inject constructor(@ApplicationContext private val context
             action = Constants.BroadcastReceiver.ACTION_APP_LAUNCH
             putExtra(Constants.BroadcastReceiver.EXTRA_PACKAGE_NAME, schedule.packageName)
             putExtra(
-                Constants.BroadcastReceiver.EXTRA_SCHEDULED_TIME,
-                schedule.scheduledTime.toString()
+                Constants.BroadcastReceiver.EXTRA_SCHEDULED_TIME, schedule.scheduledTime.toString()
             )
             putExtra(Constants.BroadcastReceiver.EXTRA_SCHEDULE_ID, schedule.id.toString())
         }
@@ -201,8 +182,7 @@ class AlarmScheduler @Inject constructor(@ApplicationContext private val context
         )
 
         if (ActivityCompat.checkSelfPermission(
-                context,
-                Manifest.permission.POST_NOTIFICATIONS
+                context, Manifest.permission.POST_NOTIFICATIONS
             ) != PackageManager.PERMISSION_GRANTED
         ) {
             Toast.makeText(
@@ -221,9 +201,7 @@ class AlarmScheduler @Inject constructor(@ApplicationContext private val context
                 )
             } else {
                 Toast.makeText(
-                    context,
-                    "Permission of Alarms and Reminders not given",
-                    Toast.LENGTH_SHORT
+                    context, "Permission of Alarms and Reminders not given", Toast.LENGTH_SHORT
                 ).show()
             }
         } else {
@@ -238,8 +216,7 @@ class AlarmScheduler @Inject constructor(@ApplicationContext private val context
             action = Constants.BroadcastReceiver.ACTION_APP_LAUNCH
             putExtra(Constants.BroadcastReceiver.EXTRA_PACKAGE_NAME, schedule.packageName)
             putExtra(
-                Constants.BroadcastReceiver.EXTRA_SCHEDULED_TIME,
-                schedule.scheduledTime.toString()
+                Constants.BroadcastReceiver.EXTRA_SCHEDULED_TIME, schedule.scheduledTime.toString()
             )
             putExtra(Constants.BroadcastReceiver.EXTRA_SCHEDULE_ID, schedule.id.toString())
         }

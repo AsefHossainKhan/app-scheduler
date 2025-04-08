@@ -42,7 +42,6 @@ import kotlinx.coroutines.withContext
 
 @Composable
 fun ShowInstalledApps(
-    modifier: Modifier = Modifier,
     onAppSelected: (String) -> Unit,
     onDismiss: () -> Unit
 ) {

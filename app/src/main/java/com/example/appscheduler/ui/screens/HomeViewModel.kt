@@ -6,6 +6,7 @@ import androidx.core.content.edit
 import androidx.lifecycle.ViewModel
 import com.example.appscheduler.data.models.Schedule
 import com.example.appscheduler.utils.AlarmScheduler
+import com.example.appscheduler.utils.Constants
 import com.example.appscheduler.utils.LocalDateTimeAdapter
 import com.google.gson.GsonBuilder
 import com.google.gson.reflect.TypeToken
@@ -18,8 +19,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
-    @ApplicationContext private val context: Context,
-    private val alarmScheduler: AlarmScheduler
+    @ApplicationContext private val context: Context, private val alarmScheduler: AlarmScheduler
 ) : ViewModel() {
 
     private val _scheduleList = MutableStateFlow<List<Schedule>>(emptyList())
@@ -34,9 +34,9 @@ class HomeViewModel @Inject constructor(
     val showEditDialog = _showEditDialog.asStateFlow()
     val showDeleteDialog = _showDeleteDialog.asStateFlow()
 
-    private val scheduleListKey = "alarm_list"
-    private val sharedPreferences: SharedPreferences =
-        context.getSharedPreferences(scheduleListKey, Context.MODE_PRIVATE)
+    private val sharedPreferences: SharedPreferences = context.getSharedPreferences(
+        Constants.SharedPreferences.APP_SCHEDULER_SHARED_PREF, Context.MODE_PRIVATE
+    )
     private val gson = GsonBuilder().registerTypeAdapter(
         LocalDateTime::class.java, LocalDateTimeAdapter()
     ).create()
@@ -46,7 +46,7 @@ class HomeViewModel @Inject constructor(
     }
 
     internal fun loadScheduleListFromPreferences() {
-        val json = sharedPreferences.getString(scheduleListKey, null)
+        val json = sharedPreferences.getString(Constants.SharedPreferences.SCHEDULE_LIST_KEY, null)
         if (json != null) {
             val type = object : TypeToken<List<Schedule>>() {}.type
             val scheduleList = gson.fromJson<List<Schedule>>(json, type)
@@ -56,11 +56,9 @@ class HomeViewModel @Inject constructor(
 
     fun saveSchedule(schedule: Schedule) {
         _scheduleItem.value = schedule
-        // Add the new schedule to the list
         val currentList = _scheduleList.value.toMutableList()
         currentList.add(schedule)
         _scheduleList.value = currentList
-        // Save the updated list to SharedPreferences
         saveSchedulesToPreferences(currentList)
         alarmScheduler.scheduleAppLaunch(schedule)
     }
@@ -75,21 +73,15 @@ class HomeViewModel @Inject constructor(
     }
 
     fun editSchedule(schedule: Schedule, updatedTime: LocalDateTime, updatedPackageName: String) {
-        // Find the index of the schedule to be edited
         val currentList = _scheduleList.value.toMutableList()
         val index = currentList.indexOfFirst { it.id == schedule.id }
         if (index != -1) {
-            // Create a new Schedule object with the updated values
             val updatedSchedule =
                 schedule.copy(scheduledTime = updatedTime, packageName = updatedPackageName)
-
-            // Create a new list with the updated schedule
             val newList = currentList.toMutableList().apply {
                 set(index, updatedSchedule)
             }
             _scheduleList.value = newList
-
-            // Save the updated list to SharedPreferences
             saveSchedulesToPreferences(newList)
             alarmScheduler.scheduleAppLaunch(updatedSchedule)
         }
@@ -100,19 +92,17 @@ class HomeViewModel @Inject constructor(
         val currentList = _scheduleList.value.toMutableList()
         val index = currentList.indexOfFirst { it.id == schedule.id }
         if (index != -1) {
-            // Remove the schedule from the list
             val newList = currentList.toMutableList().apply {
                 removeAt(index)
             }
             _scheduleList.value = newList
-            // Save the updated list to SharedPreferences
             saveSchedulesToPreferences(newList)
         }
     }
 
     private fun saveSchedulesToPreferences(scheduleList: List<Schedule>) {
         val json = gson.toJson(scheduleList)
-        sharedPreferences.edit() { putString(scheduleListKey, json) }
+        sharedPreferences.edit { putString(Constants.SharedPreferences.SCHEDULE_LIST_KEY, json) }
     }
 
     fun showAddDialog() {

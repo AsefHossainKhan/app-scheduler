@@ -10,20 +10,17 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.appscheduler.ui.BottomNavItem
 import com.example.appscheduler.ui.Screen
-import com.example.appscheduler.ui.SharedViewModel
 import com.example.appscheduler.ui.screens.HomeScreen
 import com.example.appscheduler.ui.screens.LogScreen
 
 @Composable
 fun Navigation() {
-    val sharedViewModel: SharedViewModel = hiltViewModel()
     val navController = rememberNavController()
 
     Scaffold(
@@ -63,7 +60,7 @@ fun Navigation() {
         ) {
             composable(route = Screen.HomeScreen.route) {
                 Box(Modifier.padding(innerPadding)) {
-                    HomeScreen(navController, sharedViewModel)
+                    HomeScreen()
                 }
             }
             composable(route = Screen.LogScreen.route) {

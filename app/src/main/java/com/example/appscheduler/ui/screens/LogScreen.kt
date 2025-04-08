@@ -6,14 +6,17 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.appscheduler.data.models.Logger
@@ -27,7 +30,6 @@ fun LogScreen() {
     val loggerList by viewModel.loggerList.collectAsState()
 
     LaunchedEffect(Unit) {
-        // Load the logger list from SharedPreferences
         viewModel.loadLoggerListFromPreferences()
     }
 
@@ -38,13 +40,26 @@ fun LogScreen() {
                 .padding(innerPadding)
         ) {
             LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(16.dp)
+                modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(16.dp)
             ) {
                 items(loggerList.size) { loggerIndex ->
                     LogItem(
                         logger = loggerList[loggerIndex],
                     )
+                }
+                if (loggerList.isEmpty()) {
+                    item {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "No logs available yet",
+                                style = MaterialTheme.typography.headlineLarge,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -53,7 +68,7 @@ fun LogScreen() {
 }
 
 @Composable
-fun LogItem(modifier: Modifier = Modifier, logger: Logger) {
+fun LogItem(logger: Logger) {
     val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
     val scheduledTime = LocalDateTime.parse(logger.scheduledTime)
     val formattedScheduledTime = scheduledTime.format(formatter)
