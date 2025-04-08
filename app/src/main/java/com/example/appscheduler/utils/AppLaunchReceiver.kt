@@ -9,6 +9,7 @@ import android.content.BroadcastReceiver
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.os.Build
 import android.util.Log
@@ -16,8 +17,13 @@ import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.edit
+import com.example.appscheduler.data.models.Logger
 import com.example.appscheduler.data.models.Schedule
+import com.google.gson.GsonBuilder
+import com.google.gson.reflect.TypeToken
 import dagger.hilt.android.qualifiers.ApplicationContext
+import java.time.LocalDateTime
 import java.time.ZoneId
 import javax.inject.Inject
 
@@ -29,14 +35,16 @@ class AppLaunchReceiver : BroadcastReceiver() {
         if (intent.action == "com.example.appscheduler.APP_LAUNCH") {
             Log.d("AMI", "onReceive: If bhitor dhuksi")
             val packageName = intent.getStringExtra("package_name")
+            val scheduledTimeString =
+                intent.getStringExtra(Constants.BroadcastReceiver.EXTRA_SCHEDULED_TIME)
             if (!packageName.isNullOrEmpty()) {
                 Log.d("AMI", "onReceive: App launch er try marsi for $packageName")
-                launchApp(context, packageName)
+                launchApp(context, packageName, scheduledTimeString.toString())
             }
         }
     }
 
-    private fun launchApp(context: Context, packageName: String) {
+    private fun launchApp(context: Context, packageName: String, scheduledTimeString: String) {
         val packageManager = context.packageManager
         val launchIntent = packageManager.getLaunchIntentForPackage(packageName)
         Log.d("AMI", "launchApp: $launchIntent")
@@ -85,7 +93,54 @@ class AppLaunchReceiver : BroadcastReceiver() {
                 Log.d("AMI", "launchApp: Activity Option Chara")
                 context.startActivity(launchIntent)
             }
+
+            // Add to log in sharedPreferences that the application reminder was successfully executed
+            val logKey = "log_key"
+            val sharedPreferences: SharedPreferences =
+                context.getSharedPreferences(logKey, Context.MODE_PRIVATE)
+            val gson = GsonBuilder().registerTypeAdapter(
+                LocalDateTime::class.java, LocalDateTimeAdapter()
+            ).create()
+            var json = sharedPreferences.getString(logKey, null)
+            if (json == null) {
+                json = emptyList<Logger>().toString()
+            }
+            val type = object : TypeToken<List<Logger>>() {}.type
+            val loggerList = gson.fromJson<List<Logger>>(json, type)
+            val newLogger = Logger(
+                packageName,
+                scheduledTimeString,
+                LocalDateTime.now(),
+                true
+            )
+            val updatedLoggerList = loggerList.toMutableList()
+            updatedLoggerList.add(newLogger)
+            val updatedJson = gson.toJson(updatedLoggerList)
+            Log.d("AMI", "launchApp: Shared preferences e save hoitese?? $updatedJson")
+            sharedPreferences.edit() { putString(logKey, updatedJson) }
         } else {
+            // Add to log in sharedPreferences that the application reminder was unsuccessful
+            val logKey = "log_key"
+            val sharedPreferences: SharedPreferences =
+                context.getSharedPreferences(logKey, Context.MODE_PRIVATE)
+            val gson = GsonBuilder().registerTypeAdapter(
+                LocalDateTime::class.java, LocalDateTimeAdapter()
+            ).create()
+            val json = sharedPreferences.getString(logKey, null)
+            if (json != null) {
+                val type = object : TypeToken<List<Logger>>() {}.type
+                val loggerList = gson.fromJson<List<Logger>>(json, type)
+                val newLogger = Logger(
+                    packageName,
+                    scheduledTimeString,
+                    LocalDateTime.now(),
+                    false
+                )
+                val updatedLoggerList = loggerList.toMutableList()
+                updatedLoggerList.add(newLogger)
+                val updatedJson = gson.toJson(updatedLoggerList)
+                sharedPreferences.edit() { putString(logKey, updatedJson) }
+            }
             Log.d("AMI", "launchApp: I failed")
             Log.e("AppLaunchReceiver", "Failed to launch app: $packageName")
         }
@@ -146,7 +201,11 @@ class AlarmScheduler @Inject constructor(@ApplicationContext private val context
                     AlarmManager.RTC_WAKEUP, timeInMillis, pendingIntent
                 )
             } else {
-                Toast.makeText(context, "Permission of Alarms and Reminders not given", Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    context,
+                    "Permission of Alarms and Reminders not given",
+                    Toast.LENGTH_SHORT
+                ).show()
             }
         } else {
             alarmManager.setExactAndAllowWhileIdle(
