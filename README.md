@@ -1,3 +1,6 @@
+### Download Link
+The application release APK can be downloaded from [here](https://github.com/AsefHossainKhan/app-scheduler/releases/download/v1.0/app-scheduler.apk)
+
 ### Limitations
 An application is not allowed to turn on another application while it is in the background or off (idle/doze mode). It is not allowed due to user privacy and overall user flexibility reasons. The permission document can be found [here](https://developer.android.com/guide/components/activities/background-starts). What we can do is display a notification which the user can tap to open the respective application, that is allowed.
 
