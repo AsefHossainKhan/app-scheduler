@@ -1,5 +1,6 @@
 package com.example.appscheduler.ui.screens
 
+import android.R.attr.onClick
 import android.app.AlarmManager
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -13,14 +14,18 @@ import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.FloatingActionButton
@@ -34,6 +39,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -165,10 +171,15 @@ fun ScheduleListItem(schedule: Schedule, viewModel: HomeViewModel) {
     val appName = packageInfo.applicationInfo?.loadLabel(packageManager).toString()
     Row(
         modifier = Modifier
-            .padding(8.dp)
+            .fillMaxWidth()
+            .padding(16.dp)
+            .clip(shape = RoundedCornerShape(8.dp))
+            .background(MaterialTheme.colorScheme.inversePrimary)
             .combinedClickable(onClick = { viewModel.showEditDialog(schedule) }, onLongClick = {
                 viewModel.showDeleteDialog(schedule)
-            })
+            }),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Text(
             text = formattedDateTime, modifier = Modifier.padding(8.dp)

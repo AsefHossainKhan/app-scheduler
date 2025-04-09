@@ -121,11 +121,11 @@ fun InstalledAppItem(
             Column {
                 Text(
                     text = packageManager.getApplicationLabel(appInfo).toString(),
-                    style = MaterialTheme.typography.bodySmall
+                    style = MaterialTheme.typography.titleMedium
                 )
                 Text(
                     text = appInfo.packageName,
-                    style = MaterialTheme.typography.titleMedium
+                    style = MaterialTheme.typography.bodySmall
                 )
             }
         }
