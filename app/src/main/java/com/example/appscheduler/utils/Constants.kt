@@ -17,4 +17,7 @@ object Constants {
         const val CHANNEL_NAME = "App Launch Channel"
         const val CHANNEL_DESCRIPTION = "Channel for launching other apps"
     }
+    object Formatting {
+        const val DATE_TIME_FORMAT = "yyyy-MM-dd HH:mm"
+    }
 }

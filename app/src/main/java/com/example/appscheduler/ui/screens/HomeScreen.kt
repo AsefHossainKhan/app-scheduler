@@ -8,7 +8,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.provider.Settings
-import android.util.Log
+import android.widget.Toast
 import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -35,11 +35,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.appscheduler.R
 import com.example.appscheduler.data.models.Schedule
 import com.example.appscheduler.ui.components.AddSchedule
 import com.example.appscheduler.ui.components.DeleteSchedule
@@ -55,10 +57,12 @@ fun HomeScreen() {
     val launcher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { isGranted ->
-        if (isGranted) {
-            Log.d("Permission", "Notification permission granted")
-        } else {
-            Log.d("Permission", "Notification permission denied")
+        if (!isGranted) {
+            Toast.makeText(
+                context,
+                context.getString(R.string.notification_permission_denied),
+                Toast.LENGTH_SHORT
+            ).show()
         }
     }
     LaunchedEffect(Unit) {
@@ -82,7 +86,7 @@ fun HomeScreen() {
         }
     }, floatingActionButton = {
         FloatingActionButton(onClick = { viewModel.showAddDialog() }) {
-            Icon(imageVector = Icons.Default.Add, contentDescription = "Add App Scheduler")
+            Icon(imageVector = Icons.Default.Add, contentDescription = stringResource(R.string.add_fab_description))
         }
     })
 }
@@ -115,13 +119,11 @@ fun requestExactAlarmPermission(context: Context) {
 }
 
 fun requestNotificationPermission(
-    context: Context,
-    launcher: ManagedActivityResultLauncher<String, Boolean>
+    context: Context, launcher: ManagedActivityResultLauncher<String, Boolean>
 ) {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
         if (ContextCompat.checkSelfPermission(
-                context,
-                android.Manifest.permission.POST_NOTIFICATIONS
+                context, android.Manifest.permission.POST_NOTIFICATIONS
             ) != PackageManager.PERMISSION_GRANTED
         ) {
             launcher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
@@ -140,11 +142,10 @@ fun ScheduleList(scheduleList: List<Schedule>, viewModel: HomeViewModel) {
         if (scheduleList.isEmpty()) {
             item {
                 Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
+                    modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "No apps scheduled",
+                        text = stringResource(R.string.no_apps_scheduled),
                         style = MaterialTheme.typography.headlineLarge,
                         fontWeight = FontWeight.Bold
                     )
@@ -157,7 +158,7 @@ fun ScheduleList(scheduleList: List<Schedule>, viewModel: HomeViewModel) {
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ScheduleListItem(schedule: Schedule, viewModel: HomeViewModel) {
-    val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
+    val formatter = DateTimeFormatter.ofPattern(Constants.Formatting.DATE_TIME_FORMAT)
     val formattedDateTime = schedule.scheduledTime.format(formatter)
     val packageManager = LocalContext.current.packageManager
     val packageInfo = packageManager.getPackageInfo(schedule.packageName, 0)

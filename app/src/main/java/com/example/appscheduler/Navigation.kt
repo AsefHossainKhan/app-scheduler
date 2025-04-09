@@ -10,6 +10,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -34,9 +35,13 @@ fun Navigation() {
                     BottomNavItem.Log,
                 )
                 items.forEach { item ->
+                    val title = when (item) {
+                        BottomNavItem.Home -> stringResource(R.string.home_bottom_nav)
+                        BottomNavItem.Log -> stringResource(R.string.log_bottom_nav)
+                    }
                     NavigationBarItem(
-                        icon = { Icon(item.icon, contentDescription = item.title) },
-                        label = { Text(text = item.title) },
+                        icon = { Icon(item.icon, contentDescription = title) },
+                        label = { Text(text = title) },
                         selected = currentRoute == item.route,
                         onClick = {
                             navController.navigate(item.route) {

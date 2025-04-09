@@ -34,9 +34,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.createBitmap
 import androidx.core.graphics.drawable.toBitmap
+import com.example.appscheduler.R
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -68,7 +70,7 @@ fun ShowInstalledApps(
         onDismissRequest = onDismiss,
         confirmButton = {
             TextButton(onClick = onDismiss) {
-                Text("Close")
+                Text(stringResource(R.string.close))
             }
         },
         text = {
@@ -84,7 +86,7 @@ fun ShowInstalledApps(
                         }
                     }
                 } else {
-                    Text(text = "No installed apps")
+                    Text(text = stringResource(R.string.no_installed_apps))
                 }
             }
         }
@@ -109,7 +111,7 @@ fun InstalledAppItem(
             if (appIcon != null) {
                 Image(
                     bitmap = appIcon,
-                    contentDescription = "App Icon",
+                    contentDescription = stringResource(R.string.app_icon),
                     modifier = Modifier
                         .size(48.dp)
                         .clip(CircleShape)

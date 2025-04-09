@@ -69,7 +69,8 @@ class AppLaunchReceiver : BroadcastReceiver() {
             val builder: NotificationCompat.Builder =
                 NotificationCompat.Builder(context, Constants.Notification.CHANNEL_ID)
                     .setSmallIcon(R.drawable.btn_star)
-                    .setContentTitle("Open Scheduled Application").setContentText("Tap to open the scheduled application")
+                    .setContentTitle(context.getString(com.example.appscheduler.R.string.notification_title)).setContentText(
+                        context.getString(com.example.appscheduler.R.string.notification_content))
                     .setPriority(NotificationCompat.PRIORITY_HIGH).setContentIntent(pendingIntent)
                     .setAutoCancel(true)
 
@@ -79,7 +80,8 @@ class AppLaunchReceiver : BroadcastReceiver() {
                 ) != PackageManager.PERMISSION_GRANTED
             ) {
                 Toast.makeText(
-                    context, "Permission for notification not allowed", Toast.LENGTH_SHORT
+                    context,
+                    context.getString(com.example.appscheduler.R.string.permission_for_notification_not_allowed), Toast.LENGTH_SHORT
                 ).show()
                 return
             }
@@ -187,7 +189,7 @@ class AlarmScheduler @Inject constructor(@ApplicationContext private val context
         ) {
             Toast.makeText(
                 context,
-                "Permission for notification not allowed, app might not behave as expected",
+                context.getString(com.example.appscheduler.R.string.permission_for_notification_not_allowed_app_might_not_behave_as_expected),
                 Toast.LENGTH_LONG
             ).show()
             return
@@ -201,7 +203,8 @@ class AlarmScheduler @Inject constructor(@ApplicationContext private val context
                 )
             } else {
                 Toast.makeText(
-                    context, "Permission of Alarms and Reminders not given", Toast.LENGTH_SHORT
+                    context,
+                    context.getString(com.example.appscheduler.R.string.permission_of_alarms_and_reminders_not_given), Toast.LENGTH_SHORT
                 ).show()
             }
         } else {

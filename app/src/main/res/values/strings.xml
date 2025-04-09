@@ -1,3 +1,34 @@
 <resources>
     <string name="app_name">App Scheduler</string>
+    <string name="notification_permission_denied">Notification permission denied, app might not behave as expected</string>
+    <string name="add_fab_description">Add App Scheduler</string>
+    <string name="no_apps_scheduled">No apps scheduled</string>
+    <string name="no_logs_available_yet">No logs available yet</string>
+    <string name="log_text">%1$s: %2$s scheduled to execute at %3$s was %4$s</string>
+    <string name="successfully_executed">successfully executed</string>
+    <string name="not_executed_successfully">not executed successfully</string>
+    <string name="home_bottom_nav">Home</string>
+    <string name="log_bottom_nav">Log</string>
+    <string name="ok">OK</string>
+    <string name="cancel">Cancel</string>
+    <string name="select_date">Select Date: %1$s</string>
+    <string name="select_time">Select Time: %1$s:%2$s</string>
+    <string name="select_app">Select App: %1$s</string>
+    <string name="none">None</string>
+    <string name="time_validation">Please pick a future date and time</string>
+    <string name="conflict_validation">Conflict with another schedule</string>
+    <string name="app_select_validation">Please select an app</string>
+    <string name="save">Save</string>
+    <string name="delete_schedule">Delete Schedule</string>
+    <string name="delete_dialog_description">Are you sure you want to delete this schedule?</string>
+    <string name="delete">Delete</string>
+    <string name="edit">Edit</string>
+    <string name="close">Close</string>
+    <string name="no_installed_apps">No installed apps</string>
+    <string name="app_icon">App Icon</string>
+    <string name="permission_for_notification_not_allowed">Permission for notification not allowed</string>
+    <string name="notification_title">Open Scheduled Application</string>
+    <string name="notification_content">Tap to open the scheduled application</string>
+    <string name="permission_for_notification_not_allowed_app_might_not_behave_as_expected">Permission for notification not allowed, app might not behave as expected</string>
+    <string name="permission_of_alarms_and_reminders_not_given">Permission of Alarms and Reminders not given</string>
 </resources>
